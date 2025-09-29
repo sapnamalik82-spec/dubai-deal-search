@@ -4,44 +4,50 @@
   <meta charset="UTF-8">
   <title>Dubai Deal Finder</title>
   <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #results div { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    #results div { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
+    input, button { padding: 10px; margin: 5px 0; font-size: 16px; }
+    button { cursor: pointer; }
   </style>
 </head>
 <body>
-  <h2>Search Dubai Deals</h2>
+  <h2>Dubai Deal Finder</h2>
   <input type="text" id="searchInput" placeholder="Type restaurant name" />
   <button id="searchBtn">Search</button>
   <div id="results"></div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzhA71LcanNRq0-KDjpbwdaETU9hahijMl2U4bYr84tyT8u5az-0--caEjiG-NOZHaymg/exec"; // your sheet URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbxLzUoXtpG2SfbHV2-lvzmY6oaLTxdT4inApsNBzJ5lFio1jg15j0oapINbank8xmYGDg/exec"; // replace with your Apps Script URL
 
     async function searchDeals() {
       const name = document.getElementById("searchInput").value.trim();
       if (!name) return alert("Please type a restaurant name.");
 
-      const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
-      const deals = await res.json();
+      try {
+        const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
+        const deals = await res.json();
+        const container = document.getElementById("results");
+        container.innerHTML = "";
 
-      const container = document.getElementById("results");
-      container.innerHTML = "";
+        if (!deals.length) {
+          container.innerHTML = "<p>No deals found.</p>";
+          return;
+        }
 
-      if (deals.length === 0) {
-        container.innerHTML = "<p>No deals found.</p>";
-        return;
+        deals.forEach(d => {
+          const div = document.createElement("div");
+          div.innerHTML = `
+            <h3>${d.restaurant}</h3>
+            <p><strong>${d.deal}</strong> - ${d.source}</p>
+            <a href="${d.link}" target="_blank">View Deal</a>
+            <small>Valid till: ${d.validTill}</small>
+          `;
+          container.appendChild(div);
+        });
+      } catch (err) {
+        alert("Error fetching deals.");
+        console.error(err);
       }
-
-      deals.forEach(d => {
-        const div = document.createElement("div");
-        div.innerHTML = `
-          <h3>${d.restaurant}</h3>
-          <p><strong>${d.deal}</strong> - ${d.source}</p>
-          <a href="${d.link}" target="_blank">View Deal</a>
-          <small>Valid till: ${d.validTill}</small>
-        `;
-        container.appendChild(div);
-      });
     }
 
     document.getElementById("searchBtn").addEventListener("click", searchDeals);
