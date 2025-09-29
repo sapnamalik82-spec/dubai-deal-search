@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Dubai Deal Finder</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #results div { border: 1px solid #ccc; padding: 10px; margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <h2>Search Dubai Deals</h2>
+  <input type="text" id="searchInput" placeholder="Type restaurant name" />
+  <button id="searchBtn">Search</button>
+  <div id="results"></div>
+
+  <script>
+    const API_URL = "https://script.google.com/macros/s/AKfy.../exec"; // your sheet URL
+
+    async function searchDeals() {
+      const name = document.getElementById("searchInput").value.trim();
+      if (!name) return alert("Please type a restaurant name.");
+
+      const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
+      const deals = await res.json();
+
+      const container = document.getElementById("results");
+      container.innerHTML = "";
+
+      if (deals.length === 0) {
+        container.innerHTML = "<p>No deals found.</p>";
+        return;
+      }
+
+      deals.forEach(d => {
+        const div = document.createElement("div");
+        div.innerHTML = `
+          <h3>${d.restaurant}</h3>
+          <p><strong>${d.deal}</strong> - ${d.source}</p>
+          <a href="${d.link}" target="_blank">View Deal</a>
+          <small>Valid till: ${d.validTill}</small>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    document.getElementById("searchBtn").addEventListener("click", searchDeals);
+    document.getElementById("searchInput").addEventListener("keypress", e => {
+      if (e.key === "Enter") searchDeals();
+    });
+  </script>
+</body>
+</html>
