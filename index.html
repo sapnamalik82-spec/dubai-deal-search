@@ -19,7 +19,6 @@ function doGet(e) {
       const link = row[3] ? row[3].toString() : "";
       const validTill = row[4] ? row[4].toString() : "";
 
-      // filter if query is provided
       if (!query || restaurant.toLowerCase().includes(query)) {
         results.push({
           restaurant,
@@ -42,4 +41,3 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 }
-
