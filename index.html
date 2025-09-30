@@ -1,60 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Dubai Deal Finder</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: auto; }
-    #results div { border: 1px solid #ccc; padding: 10px; margin: 5px 0; border-radius: 5px; }
-    input, button { padding: 10px; margin: 5px 0; font-size: 16px; }
-    button { cursor: pointer; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dubai Deal Finder</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 20px;
+    background: #f4f4f4;
+  }
+
+  h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  #searchContainer {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+  }
+
+  input {
+    padding: 10px;
+    font-size: 16px;
+    flex: 1 1 200px;
+  }
+
+  button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+  }
+
+  #results {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 15px;
+  }
+
+  .deal-card {
+    background: white;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .deal-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .provider-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+  }
+
+  .discount-badge {
+    background: #ff4d4f;
+    color: white;
+    padding: 3px 7px;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+  }
+
+  a {
+    color: #007bff;
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+
+  small {
+    color: #555;
+  }
+</style>
 </head>
 <body>
-  <h2>Dubai Deal Finder</h2>
-  <input type="text" id="searchInput" placeholder="Type restaurant name" />
+
+<h2>Dubai Deal Finder</h2>
+<div id="searchContainer">
+  <input type="text" id="searchInput" placeholder="Type restaurant name">
   <button id="searchBtn">Search</button>
-  <div id="results"></div>
+</div>
 
-  <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxLzUoXtpG2SfbHV2-lvzmY6oaLTxdT4inApsNBzJ5lFio1jg15j0oapINbank8xmYGDg/exec"; // replace with your Apps Script URL
+<div id="results"></div>
 
-    async function searchDeals() {
-      const name = document.getElementById("searchInput").value.trim();
-      if (!name) return alert("Please type a restaurant name.");
+<script>
+const API_URL = "YOUR_GOOGLE_SHEET_WEB_APP_URL_HERE"; // replace with your Web App URL
 
-      try {
-        const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
-        const deals = await res.json();
-        const container = document.getElementById("results");
-        container.innerHTML = "";
+// Provider logos
+const providerLogos = {
+  "Entertainer": "https://upload.wikimedia.org/wikipedia/commons/3/37/Entertainer_Logo.png",
+  "Fazaa": "https://example.com/fazaa-logo.png",
+  "Esaad": "https://example.com/esaad-logo.png",
+  "Zomato": "https://example.com/zomato-logo.png",
+  "Careem": "https://example.com/careem-logo.png"
+};
 
-        if (!deals.length) {
-          container.innerHTML = "<p>No deals found.</p>";
-          return;
-        }
+async function searchDeals() {
+  const name = document.getElementById("searchInput").value.trim();
+  if (!name) return alert("Please type a restaurant name.");
 
-        deals.forEach(d => {
-          const div = document.createElement("div");
-          div.innerHTML = `
-            <h3>${d.restaurant}</h3>
-            <p><strong>${d.deal}</strong> - ${d.source}</p>
-            <a href="${d.link}" target="_blank">View Deal</a>
-            <small>Valid till: ${d.validTill}</small>
-          `;
-          container.appendChild(div);
-        });
-      } catch (err) {
-        alert("Error fetching deals.");
-        console.error(err);
-      }
+  const container = document.getElementById("results");
+  container.innerHTML = "<p>Loading...</p>";
+
+  try {
+    const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
+    const deals = await res.json();
+    container.innerHTML = "";
+
+    if (!deals.length) {
+      container.innerHTML = "<p>No deals found.</p>";
+      return;
     }
 
-    document.getElementById("searchBtn").addEventListener("click", searchDeals);
-    document.getElementById("searchInput").addEventListener("keypress", e => {
-      if (e.key === "Enter") searchDeals();
+    deals.forEach(d => {
+      const card = document.createElement("div");
+      card.className = "deal-card";
+
+      const validDate = new Date(d.validTill).toLocaleDateString();
+      const logo = providerLogos[d.source] || "";
+
+      card.innerHTML = `
+        <div class="deal-header">
+          ${logo ? `<img src="${logo}" alt="${d.source}" class="provider-logo">` : ""}
+          <strong>${d.restaurant}</strong>
+          ${d.deal.match(/\d+%/) ? `<span class="discount-badge">${d.deal.match(/\d+%/)[0]}</span>` : ""}
+        </div>
+        <p>${d.deal} - ${d.source}</p>
+        <a href="${d.link}" target="_blank">View Deal</a>
+        <small>Valid till: ${validDate}</small>
+      `;
+      container.appendChild(card);
     });
-  </script>
+  } catch (err) {
+    container.innerHTML = "<p>Error fetching deals. Check console.</p>";
+    console.error(err);
+  }
+}
+
+document.getElementById("searchBtn").addEventListener("click", searchDeals);
+document.getElementById("searchInput").addEventListener("keypress", e => {
+  if (e.key === "Enter") searchDeals();
+});
+</script>
+
 </body>
 </html>
-
