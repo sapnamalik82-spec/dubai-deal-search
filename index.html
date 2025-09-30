@@ -1,167 +1,45 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Dubai Deal Finder</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background: #f4f4f4;
-  }
-
-  h2 {
-    text-align: center;
-    margin-bottom: 20px;
-  }
-
-  #searchContainer {
-    display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 20px;
-  }
-
-  input {
-    padding: 10px;
-    font-size: 16px;
-    flex: 1 1 200px;
-  }
-
-  button {
-    padding: 10px 20px;
-    font-size: 16px;
-    cursor: pointer;
-    background: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-  }
-
-  #results {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 15px;
-  }
-
-  .deal-card {
-    background: white;
-    border-radius: 10px;
-    padding: 15px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .deal-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .provider-logo {
-    width: 40px;
-    height: 40px;
-    object-fit: contain;
-  }
-
-  .discount-badge {
-    background: #ff4d4f;
-    color: white;
-    padding: 3px 7px;
-    border-radius: 5px;
-    font-weight: bold;
-    font-size: 14px;
-  }
-
-  a {
-    color: #007bff;
-    text-decoration: none;
-  }
-
-  a:hover {
-    text-decoration: underline;
-  }
-
-  small {
-    color: #555;
-  }
-</style>
-</head>
-<body>
-
-<h2>Dubai Deal Finder</h2>
-<div id="searchContainer">
-  <input type="text" id="searchInput" placeholder="Type restaurant name">
-  <button id="searchBtn">Search</button>
-</div>
-
-<div id="results"></div>
-
-<script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxLzUoXtpG2SfbHV2-lvzmY6oaLTxdT4inApsNBzJ5lFio1jg15j0oapINbank8xmYGDg/exec"; // replace with your Web App URL
-
-// Provider logos
-const providerLogos = {
-  "Entertainer": "https://upload.wikimedia.org/wikipedia/commons/3/37/Entertainer_Logo.png",
-  "Fazaa": "https://example.com/fazaa-logo.png",
-  "Esaad": "https://example.com/esaad-logo.png",
-  "Zomato": "https://example.com/zomato-logo.png",
-  "Careem": "https://example.com/careem-logo.png"
-};
-
-async function searchDeals() {
-  const name = document.getElementById("searchInput").value.trim();
-  if (!name) return alert("Please type a restaurant name.");
-
-  const container = document.getElementById("results");
-  container.innerHTML = "<p>Loading...</p>";
-
+function doGet(e) {
   try {
-    const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
-    const deals = await res.json();
-    container.innerHTML = "";
-
-    if (!deals.length) {
-      container.innerHTML = "<p>No deals found.</p>";
-      return;
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName("Deals");
+    if (!sheet) {
+      throw new Error("Sheet 'Deals' not found. Please check the sheet name.");
     }
 
-    deals.forEach(d => {
-      const card = document.createElement("div");
-      card.className = "deal-card";
+    const data = sheet.getDataRange().getValues();
+    const query = (e?.parameter?.restaurant || "").toLowerCase();
+    const results = [];
 
-      const validDate = new Date(d.validTill).toLocaleDateString();
-      const logo = providerLogos[d.source] || "";
+    for (let i = 1; i < data.length; i++) {  // skip header row
+      const row = data[i];
 
-      card.innerHTML = `
-        <div class="deal-header">
-          ${logo ? `<img src="${logo}" alt="${d.source}" class="provider-logo">` : ""}
-          <strong>${d.restaurant}</strong>
-          ${d.deal.match(/\d+%/) ? `<span class="discount-badge">${d.deal.match(/\d+%/)[0]}</span>` : ""}
-        </div>
-        <p>${d.deal} - ${d.source}</p>
-        <a href="${d.link}" target="_blank">View Deal</a>
-        <small>Valid till: ${validDate}</small>
-      `;
-      container.appendChild(card);
-    });
+      const restaurant = row[0] ? row[0].toString() : "";
+      const deal = row[1] ? row[1].toString() : "";
+      const source = row[2] ? row[2].toString() : "";
+      const link = row[3] ? row[3].toString() : "";
+      const validTill = row[4] ? row[4].toString() : "";
+
+      // filter if query is provided
+      if (!query || restaurant.toLowerCase().includes(query)) {
+        results.push({
+          restaurant,
+          deal,
+          source,
+          link,
+          validTill
+        });
+      }
+    }
+
+    return ContentService
+      .createTextOutput(JSON.stringify(results))
+      .setMimeType(ContentService.MimeType.JSON);
+
   } catch (err) {
-    container.innerHTML = "<p>Error fetching deals. Check console.</p>";
-    console.error(err);
+    console.error("Error in doGet:", err);
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
-
-document.getElementById("searchBtn").addEventListener("click", searchDeals);
-document.getElementById("searchInput").addEventListener("keypress", e => {
-  if (e.key === "Enter") searchDeals();
-});
-</script>
-
-</body>
-</html>
 
