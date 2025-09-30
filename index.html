@@ -114,15 +114,13 @@ const providerLogos = {
   "Careem": "https://upload.wikimedia.org/wikipedia/commons/0/0e/Careem_logo.png"
 };
 
-async function searchDeals() {
-  const name = document.getElementById("searchInput").value.trim();
-  if (!name) return alert("Please type a restaurant name.");
-
+async function searchDeals(query = "") {
+  const searchTerm = query || document.getElementById("searchInput").value.trim();
   const container = document.getElementById("results");
   container.innerHTML = "<p>Loading...</p>";
 
   try {
-    const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(name)}`);
+    const res = await fetch(`${API_URL}?restaurant=${encodeURIComponent(searchTerm)}`);
     const deals = await res.json();
     container.innerHTML = "";
 
@@ -156,7 +154,12 @@ async function searchDeals() {
   }
 }
 
-document.getElementById("searchBtn").addEventListener("click", searchDeals);
+// Show all deals on page load
+window.addEventListener("DOMContentLoaded", () => {
+  searchDeals(""); 
+});
+
+document.getElementById("searchBtn").addEventListener("click", () => searchDeals());
 document.getElementById("searchInput").addEventListener("keypress", e => {
   if (e.key === "Enter") searchDeals();
 });
